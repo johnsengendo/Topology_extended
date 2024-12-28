@@ -29,10 +29,12 @@ def add_streaming_container(manager, name, role, image, shared_dir):
 # Function to start server
 def start_server():
     subprocess.run(['docker', 'exec', '-it', 'streaming_server', 'bash', '-c', 'cd /home && python3 video_streaming.py'])
+    subprocess.run(['docker', 'exec', '-it', 'host_server', 'bash', '-c', 'cd /home && python3 Web_Server.py'])
 
 # Function to start client
 def start_client():
     subprocess.run(['docker', 'exec', '-it', 'streaming_client', 'bash', '-c', 'cd /home && python3 get_video_streamed.py'])
+    subprocess.run(['docker', 'exec', '-it', 'browsing_client', 'bash', '-c', 'cd /home && python3 Web_Client.py'])
 
 # Function to start iperf server on h6
 def start_iperf_server(host):
@@ -85,17 +87,23 @@ if __name__ == '__main__':
     server = net.addDockerHost(
         'server', dimage='dev_test', ip='10.0.0.1', docker_args={'hostname': 'server'}
     )
+    web_server = net.addDockerHost(
+        'web_server', dimage='dev_test', ip='10.0.0.3', docker_args={'hostname': 'web_server'}
+    )
     client = net.addDockerHost(
         'client', dimage='dev_test', ip='10.0.0.2', docker_args={'hostname': 'client'}
     )
+    web_client = net.addDockerHost(
+        'web_client', dimage='dev_test', ip='10.0.0.4', docker_args={'hostname': 'web_client'}
+    )
 
     # Adding normal hosts
-    h1 = net.addHost('h1', ip='10.0.0.3')
-    h2 = net.addHost('h2', ip='10.0.0.4')
-    h3 = net.addHost('h3', ip='10.0.0.5')
-    h6 = net.addHost('h6', ip='10.0.0.6')
-    h4 = net.addHost('h4', ip='10.0.0.7')
-    h5 = net.addHost('h5', ip='10.0.0.8')
+    h1 = net.addHost('h1', ip='10.0.0.5')
+    h2 = net.addHost('h2', ip='10.0.0.6')
+    h3 = net.addHost('h3', ip='10.0.0.7')
+    h6 = net.addHost('h6', ip='10.0.0.8')
+    h4 = net.addHost('h4', ip='10.0.0.9')
+    h5 = net.addHost('h5', ip='10.0.0.10')
 
     # Adding switches and links to the network
     info('*** Adding switches and links\n')
@@ -103,9 +111,11 @@ if __name__ == '__main__':
     switch2 = net.addSwitch('s2')
 
     net.addLink(switch1, server)
+    net.addLink(switch1, web_server)
     net.addLink(switch1, h1)
     net.addLink(switch1, switch2, bw=bandwidth, delay=f'{delay}ms')
     net.addLink(switch2, client)
+    net.addLink(switch2, web_client)
     net.addLink(switch2, h2)
     net.addLink(switch1, h3)
     net.addLink(switch2, h6)
@@ -124,6 +134,8 @@ if __name__ == '__main__':
     # Adding containers
     streaming_server = add_streaming_container(mgr, 'streaming_server', 'server', 'streaming_server_image', shared_directory)
     streaming_client = add_streaming_container(mgr, 'streaming_client', 'client', 'streaming_client_image', shared_directory)
+    web_server_host = add_streaming_container(mgr, 'host_server', 'web_server', 'web_server_image', shared_directory)
+    web_browser = add_streaming_container(mgr, 'browsing_client', 'web_client', 'web_client_image', shared_directory)
 
     # Creating threads to run the server and client
     server_thread = threading.Thread(target=start_server)
@@ -133,17 +145,14 @@ if __name__ == '__main__':
     server_thread.start()
     client_thread.start()
 
-    # Start iperf server on h6
-    start_iperf_server(h6)
+    # Start iperf server on h5
     start_iperf_server(h5)
 
     # Use a timer to start iperf communication between h3 and h6 after 2 seconds
     def start_iperf_after_delay():
         time.sleep(2)
-        start_iperf_client(h3)
         start_iperf_client2(h4)
         time.sleep(20)
-        stop_iperf_client(h3)
         stop_iperf_client(h4)
 
     iperf_thread = threading.Thread(target=start_iperf_after_delay)
@@ -163,5 +172,7 @@ if __name__ == '__main__':
     # Cleanup: removing containers and stopping the network and VNF manager
     mgr.removeContainer('streaming_server')
     mgr.removeContainer('streaming_client')
+    mgr.removeContainer('web_server_host')
+    mgr.removeContainer('web_browser')
     net.stop()
     mgr.stop()
