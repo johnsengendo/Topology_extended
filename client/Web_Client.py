@@ -13,7 +13,7 @@ def start_tcpdump():
     Returns:
         subprocess.Popen: The tcpdump process object.
     """
-    return subprocess.Popen(['tcpdump', '-i', 'any', '-w', 'pcap/client_capture.pcap', 'tcp and port 8000 and host 10.0.0.1'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    return subprocess.Popen(['tcpdump', '-i', 'any', '-w', 'pcap/web_client_capture.pcap', 'tcp and port 8000 and host 10.0.0.3'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 def stop_tcpdump(process):
     """
@@ -28,8 +28,8 @@ def stop_tcpdump(process):
 def fetch_web_page():
     """Fetching the web page."""
     try:
-        # Sending a GET request to fetch the web page at http://10.0.0.1:8000
-        response = requests.get("http://10.0.0.1:8000")
+        # Sending a GET request to fetch the web page at http://10.0.0.3:8000
+        response = requests.get("http://10.0.0.3:8000")
         # Printing the response status code and text
         print(f"Response from server: {response.status_code}\n{response.text}")
     except requests.exceptions.ConnectionError:
