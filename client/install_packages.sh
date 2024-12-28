@@ -11,6 +11,9 @@ apt-get install -y --no-install-recommends \
     curl \
     net-tools
 
+# Install Python packages
+pip install requests
+
 # Installing the packages required for streaming videos and dumping traffic.
 apt-get install -y \
     ffmpeg \
