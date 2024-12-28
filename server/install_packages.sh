@@ -10,6 +10,8 @@ apt-get install -y --no-install-recommends \
     bash-completion \
     curl \
     net-tools
+# Install Python packages
+pip install requests
 
 # Installing the packages required for streaming videos and dumping traffic.
 apt-get install -y \
