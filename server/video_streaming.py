@@ -50,7 +50,7 @@ def main():
 
     if capture_traffic:
         pids.append(start_capture())
-        pids.append(start_capture_h6())
+        #pids.append(start_capture_h6())
         #pid = start_capture()  # Begining packet capturing
         time.sleep(2)   # Short delay to ensure capturing starts before streaming
 
