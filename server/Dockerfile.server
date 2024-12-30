@@ -1,3 +1,4 @@
+
 # Using the latest version of the nginx-rtmp docker image from tiangolo as the base image
 FROM tiangolo/nginx-rtmp:latest
 
@@ -13,21 +14,17 @@ RUN chmod +x /home/install_packages.sh
 # Executing the install_packages.sh script to install necessary packages
 RUN /home/install_packages.sh
 
-# Copying the video streaming script into the docker image
-COPY video_streaming.py /home/
+# Copying the video streaming server script into the docker image
+COPY video-streaming-server-script.py /home/
 
-# Copying the web server script into the docker container
-#COPY Web_Server.py /home
-
-# Changing the permissions of the video_streaming.py script to make it executable
-RUN chmod +x /home/video_streaming.py
-#RUN chmod +x /home/Web_Server.py
+# Giving permissions to the video streaming script server to make it executable
+RUN chmod +x /home/video-streaming-server-script.py
 
 # Copying the sample video into the docker image
-COPY video /home/video
+COPY video /home/Video
 
 # Specifying that the container listens on port 1935 at runtime
 EXPOSE 1935
 
 # Setting the default command to execute when creating a new container
-CMD ["nginx", "-g", "bash", "daemon off;"]
+CMD ["nginx", "-g", "daemon off;"]
