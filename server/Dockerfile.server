@@ -17,17 +17,17 @@ RUN /home/install_packages.sh
 COPY video_streaming.py /home/
 
 # Copying the web server script into the docker container
-COPY Web_Server.py /home
+#COPY Web_Server.py /home
 
 # Changing the permissions of the video_streaming.py script to make it executable
 RUN chmod +x /home/video_streaming.py
-RUN chmod +x /home/Web_Server.py
+#RUN chmod +x /home/Web_Server.py
 
 # Copying the sample video into the docker image
 COPY video /home/video
 
 # Specifying that the container listens on port 1935 at runtime
-EXPOSE 1935 8000
+EXPOSE 1935
 
 # Setting the default command to execute when creating a new container
 CMD ["nginx", "-g", "bash", "daemon off;"]
