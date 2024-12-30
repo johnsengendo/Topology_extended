@@ -10,11 +10,9 @@ RUN chmod +x /home/install_packages.sh
 RUN /home/install_packages.sh
 
 # Copying the get_video_streamed script into the docker image
-COPY video_client.py /home/
-#COPY Web_Client.py /home/
+COPY video-streaming-client-script.py /home/
 
-# Changing the permissions of the script to make it executable
-RUN chmod +x /home/video_client.py
-#RUN chmod +x /home/Web_Client.py
+# Giving permissions to the streaming client script for making it executable
+RUN chmod +x /home/video-streaming-client-script.py
 
 CMD ["bash"]
