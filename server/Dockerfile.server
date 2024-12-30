@@ -21,7 +21,7 @@ COPY video_streaming.py /home/
 RUN chmod +x /home/video_streaming.py
 
 # Copying the sample video into the docker image
-COPY video /home/Video
+COPY video /home/video
 
 # Specifying that the container listens on port 1935 at runtime
 EXPOSE 1935
