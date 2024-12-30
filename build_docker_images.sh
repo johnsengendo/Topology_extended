@@ -5,8 +5,8 @@
 declare -A build_configs=(
     ["streaming_server_image"]="server"
     ["streaming_client_image"]="client"
-    ["web_server_image"]="server"
-    ["web_client_image"]="client"
+    #["web_server_image"]="server"
+    #["web_client_image"]="client"
 )
 
 # Looping through the associative array
