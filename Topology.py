@@ -166,7 +166,7 @@ if __name__ == '__main__':
     iperf_thread = threading.Thread(target=start_iperf_after_delay)
     iperf_thread.start()
 # Changing link properties every 120 seconds
-    for 1 in range(20):
+    for i in range(20):
         bw, delay = random.choice(bw_delay_pairs)
         jitter = random.choice(jitter_values)
         loss = random.choice(loss_values)
