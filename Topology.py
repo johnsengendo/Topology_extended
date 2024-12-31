@@ -32,7 +32,7 @@ def start_server():
 
 # Function to start client
 def start_client():
-    subprocess.run(['docker', 'exec', '-it', 'streaming_client', 'bash', '-c', 'cd /home && python3 video_client.py'])
+    subprocess.run(['docker', 'exec', '-it', 'streaming_client', 'bash', '-c', 'cd /home && python3 get_video_streamed.py'])
 
 # Function to start iperf server on h6
 def start_iperf_server(host):
