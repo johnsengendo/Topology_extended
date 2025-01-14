@@ -66,7 +66,7 @@ if __name__ == '__main__':
 
     # Define possible bandwidth-delay pairs and variations
     bw_delay_pairs = [
-        (5, 10), (10, 20), (15, 30), (20, 40), (25, 50),
+        #(5, 10), (10, 20), (15, 30), (20, 40), (25, 50),
         (30, 60), (35, 70), (40, 80), (45, 90), (50, 100)
     ]
     jitter_values = [0, 5, 10, 20]  # Random jitter in ms
