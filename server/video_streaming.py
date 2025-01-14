@@ -43,7 +43,7 @@ def main():
     Main function to handle video streaming with optional packet capture.
     """
     input_file = "video/Deadpool.mp4"
-    loops_number = 0  # Stream the video once, without looping
+    loops_number = -1  # Stream the video once, without looping
     capture_traffic = True
 
     pids = []
