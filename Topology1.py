@@ -58,8 +58,7 @@ if __name__ == '__main__':
                         help='Enables automatic testing of the topology and closes the streaming application.')
     args = parser.parse_args()
 
-    bw_delay_pairs = [ (50, 100)
-    ]
+    bw_delay_pairs = [(50, 100)]
     jitter_values = [0]
     loss_values = [0]
 
@@ -127,9 +126,9 @@ if __name__ == '__main__':
     start_iperf_server(h6)
     start_iperf_server(h5)
 
-    # Start tcpdump on the interface between Switch 1 and Switch 2
+    # Start tcpdump on the interface of Switch 2
     tcpdump_output = os.path.join(shared_directory, 'capture.pcap')
-    tcpdump_process = start_tcpdump('s1-eth2', tcpdump_output)  # Replace 's1-eth2' with the correct interface name
+    tcpdump_process = start_tcpdump('s2-eth1', tcpdump_output)  # Replace 's2-eth1' with the correct interface name
 
     def update_link_properties():
         while True:
