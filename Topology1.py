@@ -58,11 +58,10 @@ if __name__ == '__main__':
                         help='Enables automatic testing of the topology and closes the streaming application.')
     args = parser.parse_args()
 
-    bw_delay_pairs = [
-        (30, 60), (35, 70), (40, 80), (45, 90), (50, 100)
+    bw_delay_pairs = [ (50, 100)
     ]
-    jitter_values = [0, 5, 10, 20]
-    loss_values = [0, 0.1, 0.5, 1]
+    jitter_values = [0]
+    loss_values = [0]
 
     autotest = args.autotest
 
