@@ -4,7 +4,6 @@ import subprocess
 import sys
 import time
 import threading
-import random
 from comnetsemu.cli import CLI, spawnXtermDocker
 from comnetsemu.net import Containernet, VNFManager
 from mininet.link import TCLink
@@ -35,22 +34,11 @@ def start_iperf_client(host, server_ip):
 def stop_iperf_client(host):
     host.cmd('pkill iperf')
 
-def change_link_properties(link, bw, delay, jitter=0, loss=0):
-    info(f'*** Changing link properties: BW={bw} Mbps, Delay={delay} ms, Jitter={jitter} ms, Loss={loss}%\n')
-    link.intf1.config(bw=bw, delay=f'{delay}ms', jitter=f'{jitter}ms', loss=loss)
-    link.intf2.config(bw=bw, delay=f'{delay}ms', jitter=f'{jitter}ms', loss=loss)
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Video streaming application with dynamic bandwidth and delay.')
     parser.add_argument('--autotest', dest='autotest', action='store_const', const=True, default=False,
                         help='Enables automatic testing of the topology and closes the streaming application.')
     args = parser.parse_args()
-
-    bw_delay_pairs = [
-        (30, 60), (35, 70), (40, 80), (45, 90), (50, 100)
-    ]
-    jitter_values = [0, 5, 10, 20]
-    loss_values = [0, 0.1, 0.5, 1]
 
     autotest = args.autotest
 
@@ -89,7 +77,7 @@ if __name__ == '__main__':
 
     net.addLink(switch1, server)
     net.addLink(switch1, h1)
-    middle_link = net.addLink(switch1, switch2, bw=10, delay='10ms')
+    middle_link = net.addLink(switch1, switch2, bw=50, delay='100ms')
     net.addLink(switch2, client)
     net.addLink(switch2, h2)
     net.addLink(switch1, h3)
@@ -118,27 +106,13 @@ if __name__ == '__main__':
     start_iperf_server(h3)
     start_iperf_server(h4)
 
-    def update_link_properties():
-        while True:
-            bw, delay = random.choice(bw_delay_pairs)
-            jitter = random.choice(jitter_values)
-            loss = random.choice(loss_values)
-
-            change_link_properties(middle_link, bw, delay, jitter, loss)
-
-            # Wait for 2 minutes (120 seconds) before changing the properties again
-            time.sleep(120)
-
-    dynamic_link_thread = threading.Thread(target=update_link_properties)
-    dynamic_link_thread.start()
-
     def start_iperf_after_delay():
         time.sleep(2)
         start_iperf_client(h3, '10.0.0.6')
         start_iperf_client(h4, '10.0.0.8')
         start_iperf_client(h6, '10.0.0.5')
         start_iperf_client(h5, '10.0.0.7')
-        time.sleep(20)
+        time.sleep(120)
         stop_iperf_client(h3)
         stop_iperf_client(h4)
         stop_iperf_client(h6)
