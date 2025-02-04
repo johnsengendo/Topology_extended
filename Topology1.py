@@ -29,11 +29,8 @@ def start_client():
 def start_iperf_server(host):
     host.cmd('iperf -s -p 5001 -u &')
 
-def start_iperf_client(host):
-    host.cmd('iperf -c 10.0.0.6 -p 5001 -u -b 5M -t 120 &')
-
-def start_iperf_client2(host):
-    host.cmd('iperf -c 10.0.0.8 -p 5001 -u -b 5M -t 120 &')
+def start_iperf_client(host, server_ip):
+    host.cmd(f'iperf -c {server_ip} -p 5001 -u -b 5M -t 120 &')
 
 def stop_iperf_client(host):
     host.cmd('pkill iperf')
@@ -43,24 +40,17 @@ def change_link_properties(link, bw, delay, jitter=0, loss=0):
     link.intf1.config(bw=bw, delay=f'{delay}ms', jitter=f'{jitter}ms', loss=loss)
     link.intf2.config(bw=bw, delay=f'{delay}ms', jitter=f'{jitter}ms', loss=loss)
 
-def start_tcpdump(interface, output_file):
-    info(f'*** Starting tcpdump on interface {interface}, saving to {output_file}\n')
-    return subprocess.Popen(['tcpdump', '-i', interface, '-w', output_file])
-
-def stop_tcpdump(process):
-    info('*** Stopping tcpdump\n')
-    process.terminate()
-    process.wait()
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Video streaming application with dynamic bandwidth and delay.')
     parser.add_argument('--autotest', dest='autotest', action='store_const', const=True, default=False,
                         help='Enables automatic testing of the topology and closes the streaming application.')
     args = parser.parse_args()
 
-    bw_delay_pairs = [(50, 100)]
-    jitter_values = [0]
-    loss_values = [0]
+    bw_delay_pairs = [
+        (30, 60), (35, 70), (40, 80), (45, 90), (50, 100)
+    ]
+    jitter_values = [0, 5, 10, 20]
+    loss_values = [0, 0.1, 0.5, 1]
 
     autotest = args.autotest
 
@@ -125,10 +115,8 @@ if __name__ == '__main__':
 
     start_iperf_server(h6)
     start_iperf_server(h5)
-
-    # Start tcpdump on the interface of Switch 2
-    tcpdump_output = os.path.join(shared_directory, 'capture.pcap')
-    tcpdump_process = start_tcpdump('s2-eth1', tcpdump_output)  # Replace 's2-eth1' with the correct interface name
+    start_iperf_server(h3)
+    start_iperf_server(h4)
 
     def update_link_properties():
         while True:
@@ -146,11 +134,15 @@ if __name__ == '__main__':
 
     def start_iperf_after_delay():
         time.sleep(2)
-        start_iperf_client(h3)
-        start_iperf_client2(h4)
+        start_iperf_client(h3, '10.0.0.6')
+        start_iperf_client(h4, '10.0.0.8')
+        start_iperf_client(h6, '10.0.0.5')
+        start_iperf_client(h5, '10.0.0.7')
         time.sleep(20)
         stop_iperf_client(h3)
         stop_iperf_client(h4)
+        stop_iperf_client(h6)
+        stop_iperf_client(h5)
 
     iperf_thread = threading.Thread(target=start_iperf_after_delay)
     iperf_thread.start()
@@ -161,9 +153,6 @@ if __name__ == '__main__':
 
     if not autotest:
         CLI(net)
-
-    # Stop tcpdump
-    stop_tcpdump(tcpdump_process)
 
     mgr.removeContainer('streaming_server')
     mgr.removeContainer('streaming_client')
