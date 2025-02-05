@@ -43,6 +43,12 @@ def change_link_properties(link, bw, delay, jitter=0, loss=0):
     link.intf1.config(bw=bw, delay=f'{delay}ms', jitter=f'{jitter}ms', loss=loss)
     link.intf2.config(bw=bw, delay=f'{delay}ms', jitter=f'{jitter}ms', loss=loss)
 
+def start_tcpdump(switch, interface, output_file):
+    switch.cmd(f'tcpdump -i {interface} -w {output_file} &')
+
+def stop_tcpdump(switch):
+    switch.cmd('pkill tcpdump')
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Video streaming application with dynamic bandwidth and delay.')
     parser.add_argument('--autotest', dest='autotest', action='store_const', const=True, default=False,
@@ -107,6 +113,9 @@ if __name__ == '__main__':
     reply = client.cmd("ping -c 5 10.0.0.1")
     print(reply)
 
+    info("*** Starting tcpdump on switch 2 interface s2-eth1\n")
+    start_tcpdump(switch2, 's2-eth1', os.path.join(shared_directory, 'switch2_capture.pcap'))
+
     streaming_server = add_streaming_container(mgr, 'streaming_server', 'server', 'streaming_server_image', shared_directory)
     streaming_client = add_streaming_container(mgr, 'streaming_client', 'client', 'streaming_client_image', shared_directory)
 
@@ -151,6 +160,7 @@ if __name__ == '__main__':
     if not autotest:
         CLI(net)
 
+    stop_tcpdump(switch2)
     mgr.removeContainer('streaming_server')
     mgr.removeContainer('streaming_client')
     net.stop()
