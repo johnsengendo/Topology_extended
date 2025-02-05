@@ -43,18 +43,13 @@ def change_link_properties(link, bw, delay, jitter=0, loss=0):
     link.intf1.config(bw=bw, delay=f'{delay}ms', jitter=f'{jitter}ms', loss=loss)
     link.intf2.config(bw=bw, delay=f'{delay}ms', jitter=f'{jitter}ms', loss=loss)
 
-def start_tcpdump(switch, interface, output_file):
-    switch.cmd(f'tcpdump -i {interface} -w {output_file} &')
-
-def stop_tcpdump(switch):
-    switch.cmd('pkill tcpdump')
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Video streaming application with dynamic bandwidth and delay.')
     parser.add_argument('--autotest', dest='autotest', action='store_const', const=True, default=False,
                         help='Enables automatic testing of the topology and closes the streaming application.')
     args = parser.parse_args()
 
+    # Predefined values for dynamic link changes
     bw_delay_pairs = [
         (30, 60), (35, 70), (40, 80), (45, 90), (50, 100)
     ]
@@ -63,6 +58,7 @@ if __name__ == '__main__':
 
     autotest = args.autotest
 
+    # Shared directory for pcap files and other shared data
     script_directory = os.path.abspath(os.path.dirname(__file__))
     shared_directory = os.path.join(script_directory, 'pcap')
 
@@ -98,6 +94,7 @@ if __name__ == '__main__':
 
     net.addLink(switch1, server)
     net.addLink(switch1, h1)
+    # Create the middle link between switches with initial properties
     middle_link = net.addLink(switch1, switch2, bw=10, delay='10ms')
     net.addLink(switch2, client)
     net.addLink(switch2, h2)
@@ -109,25 +106,36 @@ if __name__ == '__main__':
     info('\n*** Starting network\n')
     net.start()
 
+    # Test connectivity: ping from client to server
     info("*** Client host pings the server to test for connectivity: \n")
     reply = client.cmd("ping -c 5 10.0.0.1")
     print(reply)
 
-    info("*** Starting tcpdump on switch 2 interface s2-eth1\n")
-    start_tcpdump(switch2, 's2-eth1', os.path.join(shared_directory, 'switch2_capture.pcap'))
+    # Start the tcpdump process to capture traffic on the middle link.
+    # We'll capture traffic on one side of the link (interface on switch1 or switch2).
+    # Here we use the first interface of the middle_link.
+    capture_interface = middle_link.intf1.name
+    capture_file = os.path.join(shared_directory, "middle_link_capture.pcap")
+    tcpdump_cmd = ["sudo", "tcpdump", "-i", capture_interface, "-w", capture_file]
+    info(f'*** Starting tcpdump on interface {capture_interface}, saving to {capture_file}\n')
+    tcpdump_proc = subprocess.Popen(tcpdump_cmd)
 
+    # Add streaming Docker containers
     streaming_server = add_streaming_container(mgr, 'streaming_server', 'server', 'streaming_server_image', shared_directory)
     streaming_client = add_streaming_container(mgr, 'streaming_client', 'client', 'streaming_client_image', shared_directory)
 
+    # Start streaming server and client applications in separate threads
     server_thread = threading.Thread(target=start_server)
     client_thread = threading.Thread(target=start_client)
 
     server_thread.start()
     client_thread.start()
 
+    # Start iperf servers on h6 and h5
     start_iperf_server(h6)
     start_iperf_server(h5)
 
+    # Thread to update the link properties dynamically every 120 seconds
     def update_link_properties():
         while True:
             bw, delay = random.choice(bw_delay_pairs)
@@ -140,8 +148,10 @@ if __name__ == '__main__':
             time.sleep(120)
 
     dynamic_link_thread = threading.Thread(target=update_link_properties)
+    dynamic_link_thread.daemon = True  # Set as daemon so it exits when main thread finishes
     dynamic_link_thread.start()
 
+    # Thread to start iperf clients after a delay and then stop them
     def start_iperf_after_delay():
         time.sleep(2)
         start_iperf_client(h3)
@@ -153,14 +163,21 @@ if __name__ == '__main__':
     iperf_thread = threading.Thread(target=start_iperf_after_delay)
     iperf_thread.start()
 
+    # Wait for streaming and iperf threads to finish
     server_thread.join()
     client_thread.join()
     iperf_thread.join()
 
+    # If not running in autotest mode, drop into an interactive CLI.
     if not autotest:
         CLI(net)
 
-    stop_tcpdump(switch2)
+    # Terminate tcpdump capture before cleanup
+    info('*** Terminating tcpdump capture\n')
+    tcpdump_proc.terminate()
+    tcpdump_proc.wait()
+
+    # Cleanup Docker containers and stop the network
     mgr.removeContainer('streaming_server')
     mgr.removeContainer('streaming_client')
     net.stop()
