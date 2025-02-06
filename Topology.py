@@ -21,10 +21,10 @@ def add_streaming_container(manager, name, role, image, shared_dir):
     )
 
 def start_server():
-    subprocess.run(['docker', 'exec', '-it', 'streaming_server', 'bash', '-c', 'cd /home && python3 video_streaming.py'])
+    subprocess.run(['docker', 'exec', '-it', 'streaming_server', 'bash', '-c', 'cd /home && python3 video_streaming2.py'])
 
 def start_client():
-    subprocess.run(['docker', 'exec', '-it', 'streaming_client', 'bash', '-c', 'cd /home && python3 get_video_streamed.py'])
+    subprocess.run(['docker', 'exec', '-it', 'streaming_client', 'bash', '-c', 'cd /home && python3 get_video_streamed2.py'])
 
 def start_iperf_server(host):
     host.cmd('iperf -s -p 5001 -u &')
