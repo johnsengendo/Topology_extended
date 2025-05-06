@@ -76,10 +76,10 @@ if __name__ == '__main__':
     # Existing hosts
     h1 = net.addHost('h1', ip='10.0.0.3')  # ping test
     h2 = net.addHost('h2', ip='10.0.0.4')
-    h3 = net.addHost('h3', ip='10.0.0.5')  # medium iperf client
-    h6 = net.addHost('h6', ip='10.0.0.6')  # medium iperf server
-    h4 = net.addHost('h4', ip='10.0.0.7')  # large iperf client
-    h5 = net.addHost('h5', ip='10.0.0.8')  # large iperf server
+    h3 = net.addHost('h3', ip='10.0.0.5')  # medium iperf client & file transfer
+    h6 = net.addHost('h6', ip='10.0.0.6')  # medium iperf & file server
+    h4 = net.addHost('h4', ip='10.0.0.7')  # large iperf client & file transfer
+    h5 = net.addHost('h5', ip='10.0.0.8')  # large iperf & file server
 
     # New web hosts
     h7 = net.addHost('h7', ip='10.0.0.9')  # web server
@@ -98,7 +98,6 @@ if __name__ == '__main__':
     net.addLink(switch2, h6)
     net.addLink(switch1, h4)
     net.addLink(switch2, h5)
-    # Links for web hosts
     net.addLink(switch1, h7)
     net.addLink(switch2, h8)
 
@@ -125,11 +124,22 @@ if __name__ == '__main__':
     web_thread.daemon = True
     web_thread.start()
 
-    # Start tcpdump on middle link
+    # Start tcpdump for iperf/file traffic (udp port 5001)
     capture_interface = middle_link.intf1.name
-    capture_file = os.path.join(shared_directory, 'middle_link_capture.pcap')
-    info(f'*** Starting tcpdump on {capture_interface}, saving to {capture_file}\n')
-    tcpdump_proc = subprocess.Popen(['sudo', 'tcpdump', '-i', capture_interface, '-w', capture_file])
+    iperf_pcap = os.path.join(shared_directory, 'file_traffic.pcap')
+    info(f'*** Capturing file/iperf traffic on {capture_interface} (port 5001), saving to {iperf_pcap}\n')
+    iperf_dump = subprocess.Popen([
+        'sudo', 'tcpdump', '-i', capture_interface,
+        'udp', 'port', '5001', '-w', iperf_pcap
+    ])
+
+    # Start tcpdump for web traffic (port 80)
+    web_pcap = os.path.join(shared_directory, 'web_traffic.pcap')
+    info(f'*** Capturing web (HTTP) traffic on {capture_interface} (port 80), saving to {web_pcap}\n')
+    web_dump = subprocess.Popen([
+        'sudo', 'tcpdump', '-i', capture_interface,
+        'tcp', 'port', '80', '-w', web_pcap
+    ])
 
     # Add streaming containers
     streaming_server = add_streaming_container(mgr, 'streaming_server', 'server', 'streaming_server_image', shared_directory)
@@ -188,7 +198,8 @@ if __name__ == '__main__':
         CLI(net)
 
     # Cleanup
-    info('*** Terminating tcpdump\n')
-    tcpdump_proc.terminate(); tcpdump_proc.wait()
+    info('*** Terminating tcpdump captures\n')
+    iperf_dump.terminate(); iperf_dump.wait()
+    web_dump.terminate(); web_dump.wait()
     mgr.removeContainer('streaming_server'); mgr.removeContainer('streaming_client')
     net.stop(); mgr.stop()
