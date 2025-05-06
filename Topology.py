@@ -51,10 +51,9 @@ if __name__ == '__main__':
 
     # Predefined values for dynamic link changes
     bw_delay_pairs = [
-        (30, 60), (35, 70), (40, 80), (45, 90), (50, 100)
-    ]
-    jitter_values = [0, 5, 10, 20]
-    loss_values = [0, 0.1, 0.5, 1]
+        (30, 60)]# (35, 70), (40, 80), (45, 90), (50, 100)
+    jitter_values = [0, 5]#, 10, 20]
+    loss_values = [0, 0.1]#, 0.5, 1]
 
     autotest = args.autotest
 
